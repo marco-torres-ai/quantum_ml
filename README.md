@@ -1,4 +1,4 @@
-# ⚛️ Aprendizaje Automático Cuántico (QML) - Experimentos de Laboratorio
+# ⚛️ Aprendizaje Automático Cuántico (QML) - Laboratorio de Experimentos
 
 [![PennyLane](https://img.shields.io/badge/PennyLane-0.34%2B-blueviolet?style=for-the-badge&logo=pennylane)](https://pennylane.ai/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-orange?style=for-the-badge&logo=pytorch)](https://pytorch.org/)
@@ -72,6 +72,39 @@ graph TD
 
 ---
 
+## 📐 Fundamentos Matemáticos
+
+### Codificación de Características
+Para introducir variables reales en el estado cuántico $|\psi\rangle$, se utiliza **Angle Embedding**. Las características se mapean a rotaciones en la Esfera de Bloch:
+$$|\psi(\vec{x})\rangle = \bigotimes_{j=1}^n R_x(x_j) |0\rangle^{\otimes n}$$
+Donde la compuerta elemental se define como $R_x(\theta) = \exp\left(-i \frac{\theta}{2} X\right)$.
+
+### Ansatz Parametrizado (Capas del QNN)
+Cada qubit es rotado bajo tres ángulos controlables $\vec{\theta} = \{\alpha, \beta, \gamma\}$ mediante la compuerta general unitaria `Rot`:
+$$R(\alpha, \beta, \gamma) = R_z(\gamma) R_y(\beta) R_z(\alpha)$$
+El entrelazamiento circular utiliza compuertas CNOT de acoplamiento periódico para entrelazar el espacio de Hilbert completo.
+
+### Reducción Cuántica en Patch GAN
+Para generar un parche de 16 píxeles con solo 5 qubits, se utiliza una medición proyectiva en la ancila ($q_4$). Las probabilidades se calculan sobre la densidad de estado reducida:
+$$P(x_0 \dots x_3) = \text{Tr}_{q_4} \left( |\psi\rangle \langle \psi | \otimes |1\rangle\langle 1|_{q_4} \right)$$
+Esto produce una salida de $2^4 = 16$ intensidades escaladas que reconstruyen el parche $4\times 4$ de la imagen.
+
+---
+
+## 📊 Comparativa de Modelos
+
+| Métrica / Atributo | Clasificador QNN (Wine) | Quantum Patch GAN (Digits) |
+| :--- | :--- | :--- |
+| **Dataset** | Wine Dataset (Scikit-Learn) | optdigits (Handwritten '5') |
+| **Tipo de Tarea** | Clasificación Binaria | Generación Adversaria |
+| **Qubits Totales** | 13 qubits | 20 qubits (4x PQCs de 5 qubits) |
+| **Parámetros Ajustables** | 78 parámetros | 36 parámetros |
+| **Optimizador** | Adam ($\eta = 0.01$) | SGD ($\eta = 0.01$) |
+| **Función de Pérdida** | MSE Loss | Binary Cross Entropy (BCE) |
+| **Métrica Final** | Precisión de Test: **~92%** | D Loss: **~1.32** / G Loss: **~0.70** |
+
+---
+
 ## 🛠️ Configuración y Ejecución Local
 
 Se ha provisto un entorno virtual preconfigurado (`.venv`) en la raíz del repositorio con todas las bibliotecas instaladas.
@@ -125,3 +158,9 @@ jupyter lab
 * **Simulaciones Cuánticas Lentas**: 
   - El simulador del clasificador utiliza `default.qubit` sobre 13 qubits. El cálculo de gradientes por autograd puede demorar unos minutos.
   - El Patch GAN utiliza `lightning.qubit` para optimizar el rendimiento de simulación en hardware moderno. Si dispones de recursos avanzados, puedes alternar los dispositivos para evaluar la aceleración física.
+
+---
+
+## 🔮 Líneas de Investigación Futura
+- **Ansätze Convolucionales Cuánticos (QCNN)**: Reducir la dimensionalidad de entrada mediante compuertas de pooling cuántico para datasets de mayor escala (como MNIST completo).
+- **Ejecución en Hardware Físico**: Configurar tokens de acceso a dispositivos QPUs reales de IBM Quantum o Rigetti a través del plugin `pennylane-qiskit`.

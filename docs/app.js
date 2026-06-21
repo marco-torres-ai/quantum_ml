@@ -767,10 +767,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const docSearch = document.getElementById("docSearch");
     docSearch.addEventListener("input", (e) => {
         const query = e.target.value.toLowerCase().trim();
+        const headings = document.querySelectorAll("main h2, main h3, main p");
+        
+        // Clear all previous highlights
+        headings.forEach(el => {
+            el.style.backgroundColor = "";
+        });
+
         if (query === "") return;
 
         // Perform search across headings and text content
-        const headings = document.querySelectorAll("main h2, main h3, main p");
         let firstMatch = null;
 
         headings.forEach(el => {
@@ -779,8 +785,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Highlight temporarily
                 el.style.backgroundColor = "rgba(0, 242, 254, 0.2)";
                 setTimeout(() => {
-                    el.style.backgroundColor = "transparent";
-                }, 2000);
+                    // Revert highlight by clearing inline style
+                    if (el.style.backgroundColor === "rgba(0, 242, 254, 0.2)") {
+                        el.style.backgroundColor = "";
+                    }
+                }, 3000);
                 
                 if (!firstMatch) {
                     firstMatch = el;

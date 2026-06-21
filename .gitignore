@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+scratch/
+check_env.py
+download_dataset.py
+test_gan.py
+test_gan_no_measure.py
+test_gan_default.py
+test_classifier.py
+test_speed.py
+execute_notebooks.py
+modify_notebooks.py
+fix_gan_visualization.py

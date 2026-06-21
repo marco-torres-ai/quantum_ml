@@ -1,11 +1,6 @@
-# ⚛️ Aprendizaje Automático Cuántico (QML) - Laboratorio de Experimentos
+# ⚛️ Aprendizaje Automático Cuántico (QML) - Experimentos de Laboratorio
 
-[![PennyLane](https://img.shields.io/badge/PennyLane-0.34%2B-blueviolet?style=for-the-badge&logo=pennylane)](https://pennylane.ai/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-orange?style=for-the-badge&logo=pytorch)](https://pytorch.org/)
-[![Scikit-Learn](https://img.shields.io/badge/scikit--learn-1.2%2B-blue?style=for-the-badge&logo=scikitlearn)](https://scikit-learn.org/)
-[![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python)](https://www.python.org/)
-
-Este repositorio alberga el código fuente, notebooks optimizados y explicaciones matemáticas detalladas para dos modelos de vanguardia en el campo del **Aprendizaje Automático Cuántico (QML)**. Los experimentos combinan computación cuántica simulada con redes neuronales clásicas para resolver tareas de clasificación y generación de imágenes.
+Este repositorio contiene implementaciones optimizadas de modelos de **Aprendizaje Automático Cuántico (QML)** utilizando el stack de **PennyLane**, **PyTorch** y **Scikit-Learn**. Se abordan dos problemas fundamentales de la inteligencia artificial moderna: **Clasificación Binaria Cuántica** (red neuronal cuántica discriminativa) y **Quantum Patch GAN** (red generativa adversaria para síntesis de imágenes).
 
 ---
 
@@ -25,16 +20,16 @@ Este repositorio alberga el código fuente, notebooks optimizados y explicacione
 
 ---
 
-## 🔬 Experimentos Implementados
+## 🔬 Descripción de Experimentos
 
 ### 1. Clasificador Cuántico QNN (Wine Dataset)
 * **Notebook**: [quatum_classifier.ipynb](file:///c:/Users/User/OneDrive/Desktop/quantum_ml/quatum_classifier.ipynb)
-* **Objetivo**: Clasificación binaria de muestras químicas del dataset Wine de Scikit-Learn.
-* **Modelo Cuántico**: Circuito Cuántico Parametrizado (PQC) de 13 qubits y 2 capas entrelazadas.
+* **Objetivo**: Clasificación binaria de muestras químicas de vinos en base a 13 variables fisicoquímicas.
+* **Modelo Cuántico**: Circuito Cuántico Parametrizado (PQC) con Angle Embedding y entrelazamiento circular CNOT.
 
 ```mermaid
 graph LR
-    A[Características del Vino x ∈ ℝ¹³] --> B[Normalización Min-Max a [0, π]]
+    A[Datos Clásicos x ∈ ℝ¹³] --> B[Normalización Min-Max a [0, π]]
     B --> C[Angle Embedding Rx en 13 Qubits]
     C --> D[Entrelazador CNOT Lineal]
     D --> E[Capa Parametrizada Rot(α,β,γ)]
@@ -43,14 +38,38 @@ graph LR
     G --> H[Predicción de Clase [-1, 1]]
 ```
 
+#### Código Núcleo:
+```python
+# Codificación y Ansatz del Clasificador Cuántico
+def data_encoding(x):
+    n_qubit = len(x)
+    qml.AngleEmbedding(features=x, wires=range(n_qubit), rotation='X')
+    for i in range(n_qubit):
+        if i + 1 < n_qubit:
+            qml.CNOT(wires=[i, i + 1])
+
+def classifier(param, x=None):
+    data_encoding(x)
+    n_layer, n_qubit = param.shape[0], param.shape[1]
+    for i in range(n_layer):
+        for j in range(n_qubit):
+            qml.Rot(param[i, j, 0], param[i, j, 1], param[i, j, 2], wires=j)
+        for j in range(n_qubit):
+            if j + 1 < n_qubit:
+                qml.CNOT(wires=[j, j + 1])
+    return qml.expval(qml.PauliZ(0))
+```
+
+---
+
 ### 2. Quantum Patch GAN (Generación de Dígitos)
 * **Notebook**: [quantum_patch_gan.ipynb](file:///c:/Users/User/OneDrive/Desktop/quantum_ml/quantum_patch_gan.ipynb)
-* **Objetivo**: Sintetizar imágenes de $8\times 8$ píxeles del dígito manuscrito '5'.
-* **Modelo Cuántico-Clásico**: Generador cuántico dividido en parches (4 sub-circuitos de 5 qubits con ancilas) y un discriminador clásico PyTorch perceptrón multicapa (MLP).
+* **Objetivo**: Generar imágenes sintéticas de $8\times 8$ píxeles del dígito manuscrito '5'.
+* **Modelo**: Generador cuántico dividido en 4 parches independientes de 16 píxeles (cada uno alimentado por un PQC de 5 qubits con 1 qubit ancila medido parcialmente) y un discriminador clásico PyTorch MLP.
 
 ```mermaid
 graph TD
-    subgraph Generador Cuántico (G)
+    subgraph Generador Cuántico por Parches (G)
         A[Vector Latente z ∈ [0, π]⁵] --> B1[Sub-PQC 1]
         A --> B2[Sub-PQC 2]
         A --> B3[Sub-PQC 3]
@@ -70,33 +89,81 @@ graph TD
     F --> H[Clasificación Real/Sintética]
 ```
 
+#### Código Núcleo:
+```python
+# Generador cuántico por parches y Discriminador clásico
+class PatchQuantumGenerator(nn.Module):
+    def __init__(self, qnode_generator, n_generator, n_qubit, n_qubit_a, n_layer):
+        super().__init__()
+        self.params_generator = nn.ParameterList([
+            nn.Parameter(torch.rand((n_layer, n_qubit, 3)), requires_grad=True)
+            for _ in range(n_generator)
+        ])
+        self.qnode_generator = qnode_generator
+        self.n_qubit_a = n_qubit_a
+        
+    def forward(self, z):
+        images_generated = []
+        for x in z:
+            patches = []
+            for i in range(len(self.params_generator)):
+                # Ejecuta cada circuito cuántico parametrizado
+                probs = self.qnode_generator(self.params_generator[i], x)
+                patches.append(probs)
+            images_generated.append(torch.cat(patches))
+        return torch.stack(images_generated)
+
+class ClassicalDiscriminator(nn.Module):
+    def __init__(self, input_shape):
+        super().__init__()
+        self.model = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(int(np.prod(input_shape)), 256),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(128, 1),
+            nn.Sigmoid()
+        )
+```
+
 ---
 
-## 📐 Fundamentos Matemáticos
+## 📐 Ecuaciones y Fundamentos Teóricos
 
-### Codificación de Características
-Para introducir variables reales en el estado cuántico $|\psi\rangle$, se utiliza **Angle Embedding**. Las características se mapean a rotaciones en la Esfera de Bloch:
+### 1. Codificación Cuántica (State Encoding)
+Mapea el vector real clásico $x$ al espacio de Hilbert mediante rotaciones cuánticas unitarias:
 $$|\psi(\vec{x})\rangle = \bigotimes_{j=1}^n R_x(x_j) |0\rangle^{\otimes n}$$
-Donde la compuerta elemental se define como $R_x(\theta) = \exp\left(-i \frac{\theta}{2} X\right)$.
+Donde la compuerta cuántica unitaria $R_x(\theta)$ se expresa matricialmente en la base computacional como:
+$$R_x(\theta) = \exp\left(-i \frac{\theta}{2} X\right) = \begin{pmatrix} \cos(\theta/2) & -i\sin(\theta/2) \\ -i\sin(\theta/2) & \cos(\theta/2) \end{pmatrix}$$
 
-### Ansatz Parametrizado (Capas del QNN)
-Cada qubit es rotado bajo tres ángulos controlables $\vec{\theta} = \{\alpha, \beta, \gamma\}$ mediante la compuerta general unitaria `Rot`:
+### 2. Capas Variacionales (Ansätze)
+Cada compuerta parametrizada de rotación tridimensional general `qml.Rot` se define como:
 $$R(\alpha, \beta, \gamma) = R_z(\gamma) R_y(\beta) R_z(\alpha)$$
-El entrelazamiento circular utiliza compuertas CNOT de acoplamiento periódico para entrelazar el espacio de Hilbert completo.
+El entrelazamiento cuántico multi-qubit acopla las fases y amplitudes mediante compuertas CNOT de control circular periódico:
+$$U_{\text{ent}} = \text{CNOT}_{n-1, 0} \prod_{j=0}^{n-2} \text{CNOT}_{j, j+1}$$
 
-### Reducción Cuántica en Patch GAN
+### 3. Reducción Cuántica en Patch GAN
 Para generar un parche de 16 píxeles con solo 5 qubits, se utiliza una medición proyectiva en la ancila ($q_4$). Las probabilidades se calculan sobre la densidad de estado reducida:
 $$P(x_0 \dots x_3) = \text{Tr}_{q_4} \left( |\psi\rangle \langle \psi | \otimes |1\rangle\langle 1|_{q_4} \right)$$
 Esto produce una salida de $2^4 = 16$ intensidades escaladas que reconstruyen el parche $4\times 4$ de la imagen.
 
+### 4. Función de Pérdida del GAN Híbrido
+La optimización alternada del generador cuántico $G$ y el discriminador clásico $D$ se formula mediante la entropía cruzada binaria (BCE Loss):
+$$\min_G \max_D V(D, G) = \mathbb{E}_{x \sim p_{\text{data}}}[ \log D(x) ] + \mathbb{E}_{z \sim p_{z}}[ \log(1 - D(G(z))) ]$$
+
 ---
 
-## 📊 Comparativa de Modelos
+## 📊 Comparativa de Experimentos
 
-| Métrica / Atributo | Clasificador QNN (Wine) | Quantum Patch GAN (Digits) |
+La siguiente tabla resume los aspectos técnicos y arquitectónicos de ambos experimentos:
+
+| Atributo | Clasificador QNN (Wine) | Quantum Patch GAN (Digits) |
 | :--- | :--- | :--- |
-| **Dataset** | Wine Dataset (Scikit-Learn) | optdigits (Handwritten '5') |
-| **Tipo de Tarea** | Clasificación Binaria | Generación Adversaria |
+| **Dataset** | Wine Dataset (Scikit-Learn) | optdigits (Handwritten '5' de UCI) |
+| **Tipo de Tarea** | Clasificación Binaria | Generación de Imágenes ($8\times 8$) |
 | **Qubits Totales** | 13 qubits | 20 qubits (4x PQCs de 5 qubits) |
 | **Parámetros Ajustables** | 78 parámetros | 36 parámetros |
 | **Optimizador** | Adam ($\eta = 0.01$) | SGD ($\eta = 0.01$) |
@@ -105,12 +172,12 @@ Esto produce una salida de $2^4 = 16$ intensidades escaladas que reconstruyen el
 
 ---
 
-## 🛠️ Configuración y Ejecución Local
+## 🛠️ Instalación y Configuración Local
 
-Se ha provisto un entorno virtual preconfigurado (`.venv`) en la raíz del repositorio con todas las bibliotecas instaladas.
+Se incluye un entorno virtual preconfigurado (`.venv`) en la raíz del repositorio con todas las bibliotecas de QML requeridas.
 
 ### 1. Activar el Entorno Virtual
-Abre tu shell preferido en el directorio del proyecto y ejecuta:
+Abra su terminal en la raíz del repositorio y ejecute el comando correspondiente:
 
 * **Windows (PowerShell)**:
   ```powershell
@@ -121,8 +188,15 @@ Abre tu shell preferido en el directorio del proyecto y ejecuta:
   source .venv/Scripts/activate
   ```
 
-### 2. Iniciar Jupyter Lab
-Inicia el entorno Jupyter para ejecutar los notebooks:
+### 2. Instalar Dependencias (Opcional si se requiere reinstalación)
+Si necesita reconstruir el entorno, ejecute:
+```bash
+pip install -r requirements.txt
+```
+*Las dependencias principales son: `torch`, `pennylane`, `pennylane-lightning`, `scikit-learn` y `matplotlib`.*
+
+### 3. Ejecución de los Notebooks
+Lance el servidor Jupyter:
 ```bash
 jupyter lab
 ```
@@ -132,35 +206,24 @@ jupyter lab
 
 ---
 
-## 📂 Estructura de Directorios
-
-```bash
-├── code/
-│   └── chapter5_qnn/
-│       └── data/
-│           └── optdigits.tra       # Dataset original UCI de dígitos escritos a mano
-├── docs/
-│   ├── index.html                  # Portal web de documentación interactiva (HTML5/JS)
-│   ├── styles.css                  # Estilos premium (Glassmorphism & Neon Glow)
-│   ├── app.js                      # Controlador JS del portal, sliders y simulador
-│   └── README.md                   # Documentación teórica y matemática formal (Markdown)
-├── quatum_classifier.ipynb         # Notebook con el clasificador binario Wine
-├── quantum_patch_gan.ipynb         # Notebook con el generador de parches de dígitos GAN
-├── .gitignore                      # Exclusiones estándar del repositorio Git
-└── README.md                       # Presentación general del laboratorio (este archivo)
-```
-
----
-
 ## 🔍 Solución de Problemas
 
-* **Error de importación de PennyLane o PyTorch**: Asegúrate de haber activado el entorno virtual (`.venv`) antes de lanzar Jupyter.
-* **Simulaciones Cuánticas Lentas**: 
-  - El simulador del clasificador utiliza `default.qubit` sobre 13 qubits. El cálculo de gradientes por autograd puede demorar unos minutos.
-  - El Patch GAN utiliza `lightning.qubit` para optimizar el rendimiento de simulación en hardware moderno. Si dispones de recursos avanzados, puedes alternar los dispositivos para evaluar la aceleración física.
+* **Errores de módulo faltante (`ModuleNotFoundError`)**: Ocurre si Jupyter Lab no está usando el kernel correcto. Verifique que la terminal donde inició Jupyter tenga activada la variable de entorno `.venv` y que el notebook esté asignado al kernel `.venv` local.
+* **Cálculo de Gradientes Lento**:
+  - En el clasificador binario, se calculan derivadas de 78 parámetros sobre 13 qubits usando `default.qubit` (simulador puro en Python). Esto puede tomar unos minutos por época.
+  - En Patch GAN, el simulador se ha migrado a `lightning.qubit` para acelerar las operaciones del estado vector en C++.
 
 ---
 
-## 🔮 Líneas de Investigación Futura
-- **Ansätze Convolucionales Cuánticos (QCNN)**: Reducir la dimensionalidad de entrada mediante compuertas de pooling cuántico para datasets de mayor escala (como MNIST completo).
-- **Ejecución en Hardware Físico**: Configurar tokens de acceso a dispositivos QPUs reales de IBM Quantum o Rigetti a través del plugin `pennylane-qiskit`.
+## 📚 Recursos Académicos y Referencias
+
+Para profundizar en la teoría de computación cuántica y aprendizaje automático cuántico aplicados en este proyecto, se recomiendan las siguientes publicaciones:
+
+1. **Quantum GANs para Generación de Imágenes**:
+   * Dallaire-Demers, P. L., & Killoran, N. (2018). *Quantum generative adversarial networks for learning and providing natural distributions*. [arXiv:1804.08639](https://arxiv.org/abs/1804.08639).
+2. **Entrenamiento de Ansätze Parametrizados**:
+   * Mitarai, K., Negoro, M., Kitagawa, M., & Fujii, K. (2018). *Quantum machine learning in feature Hilbert spaces*. [Physical Review A, 98(3), 032309](https://journals.aps.org/pra/abstract/10.1103/PhysRevA.98.032309).
+3. **Regla de Parameter-Shift**:
+   * Schuld, M., Bergholm, V., Gogolin, C., & Izaac, J. (2019). *Evaluating analytic gradients on quantum hardware*. [Physical Review A, 99(3), 032331](https://journals.aps.org/pra/abstract/10.1103/PhysRevA.99.032331).
+4. **PennyLane Documentation**:
+   * Guías y tutoriales oficiales sobre optimización cuántica, embeddings y redes híbridas en [PennyLane Docs](https://pennylane.ai/qml/).

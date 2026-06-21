@@ -134,25 +134,37 @@ class ClassicalDiscriminator(nn.Module):
 ## 📐 Ecuaciones y Fundamentos Teóricos
 
 ### 1. Codificación Cuántica (State Encoding)
-Mapea el vector real clásico $x$ al espacio de Hilbert mediante rotaciones cuánticas unitarias:
-$$|\psi(\vec{x})\rangle = \bigotimes_{j=1}^n R_x(x_j) |0\rangle^{\otimes n}$$
+Mapea el vector real clásico $\vec{x}$ al espacio de Hilbert mediante rotaciones cuánticas unitarias:
+$$
+\lvert\psi(\vec{x})\rangle = \bigotimes_{j=1}^n R_x(x_j) \lvert0\rangle^{\otimes n}
+$$
 Donde la compuerta cuántica unitaria $R_x(\theta)$ se expresa matricialmente en la base computacional como:
-$$R_x(\theta) = \exp\left(-i \frac{\theta}{2} X\right) = \begin{pmatrix} \cos(\theta/2) & -i\sin(\theta/2) \\ -i\sin(\theta/2) & \cos(\theta/2) \end{pmatrix}$$
+$$
+R_x(\theta) = \exp\left(-i \frac{\theta}{2} X\right) = \begin{pmatrix} \cos(\theta/2) & -i\sin(\theta/2) \\ -i\sin(\theta/2) & \cos(\theta/2) \end{pmatrix}
+$$
 
 ### 2. Capas Variacionales (Ansätze)
 Cada compuerta parametrizada de rotación tridimensional general `qml.Rot` se define como:
-$$R(\alpha, \beta, \gamma) = R_z(\gamma) R_y(\beta) R_z(\alpha)$$
+$$
+R(\alpha, \beta, \gamma) = R_z(\gamma) R_y(\beta) R_z(\alpha)
+$$
 El entrelazamiento cuántico multi-qubit acopla las fases y amplitudes mediante compuertas CNOT de control circular periódico:
-$$U_{\text{ent}} = \text{CNOT}_{n-1, 0} \prod_{j=0}^{n-2} \text{CNOT}_{j, j+1}$$
+$$
+U_{\text{ent}} = \text{CNOT}_{n-1, 0} \prod_{j=0}^{n-2} \text{CNOT}_{j, j+1}
+$$
 
 ### 3. Reducción Cuántica en Patch GAN
 Para generar un parche de 16 píxeles con solo 5 qubits, se utiliza una medición proyectiva en la ancila ($q_4$). Las probabilidades se calculan sobre la densidad de estado reducida:
-$$P(x_0 \dots x_3) = \text{Tr}_{q_4} \left( |\psi\rangle \langle \psi | \otimes |1\rangle\langle 1|_{q_4} \right)$$
+$$
+P(x_0 \dots x_3) = \text{Tr}_{q_4} \left( \lvert\psi\rangle \langle \psi \rvert \otimes \lvert1\rangle\langle 1\rvert_{q_4} \right)
+$$
 Esto produce una salida de $2^4 = 16$ intensidades escaladas que reconstruyen el parche $4\times 4$ de la imagen.
 
 ### 4. Función de Pérdida del GAN Híbrido
 La optimización alternada del generador cuántico $G$ y el discriminador clásico $D$ se formula mediante la entropía cruzada binaria (BCE Loss):
-$$\min_G \max_D V(D, G) = \mathbb{E}_{x \sim p_{\text{data}}}[ \log D(x) ] + \mathbb{E}_{z \sim p_{z}}[ \log(1 - D(G(z))) ]$$
+$$
+\min_G \max_D V(D, G) = \mathbb{E}_{x \sim p_{\text{data}}}[ \log D(x) ] + \mathbb{E}_{z \sim p_{z}}[ \log(1 - D(G(z))) ]
+$$
 
 ---
 

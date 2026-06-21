@@ -34,10 +34,14 @@ El clasificador consta de un circuito parametrizado estructurado en capas (ansat
 
 ### Optimización y Pérdida
 El observable medido al final del circuito es el valor esperado del operador Pauli $Z$ en el primer qubit:
-$$\hat{y}(\vec{x}, \vec{\theta}) = \langle \psi(\vec{x}, \vec{\theta}) | Z_0 | \psi(\vec{x}, \vec{\theta}) \rangle$$
+$$
+\hat{y}(\vec{x}, \vec{\theta}) = \langle \psi(\vec{x}, \vec{\theta}) \rvert Z_0 \lvert \psi(\vec{x}, \vec{\theta}) \rangle
+$$
 
 La optimización se realiza minimizando la función de costo del error cuadrático medio (MSE Loss):
-$$\mathcal{L}(\vec{\theta}) = \frac{1}{N} \sum_{k=1}^N \left( \hat{y}(\vec{x}^{(k)}, \vec{\theta}) - y^{(k)} \right)^2$$
+$$
+\mathcal{L}(\vec{\theta}) = \frac{1}{N} \sum_{k=1}^N \left( \hat{y}(\vec{x}^{(k)}, \vec{\theta}) - y^{(k)} \right)^2
+$$
 
 El modelo se entrena usando el optimizador **Adam** con una tasa de aprendizaje $\eta = 0.01$ y un tamaño de lote (batch size) de 4 a lo largo de 50 épocas.
 
@@ -92,8 +96,9 @@ El discriminador es una red clásica perceptrón multicapa (MLP) construida en P
 
 ### Función de Pérdida Adversaria y Entrenamiento
 El discriminador $D$ y el generador cuántico $G$ se entrenan de forma alterna utilizando una función de pérdida de entropía cruzada binaria (BCE Loss):
-
-$$\min_G \max_D V(D, G) = \mathbb{E}_{x \sim p_{\text{data}}}[ \log D(x) ] + \mathbb{E}_{z \sim p_{z}}[ \log(1 - D(G(z))) ]$$
+$$
+\min_G \max_D V(D, G) = \mathbb{E}_{x \sim p_{\text{data}}}[ \log D(x) ] + \mathbb{E}_{z \sim p_{z}}[ \log(1 - D(G(z))) ]
+$$
 
 - **Discriminador**: Maximiza la probabilidad de asignar la etiqueta correcta tanto a imágenes reales del dataset UCI `optdigits` como a las imágenes falsas generadas.
 - **Generador**: Minimiza la probabilidad de que el discriminador detecte sus imágenes sintéticas como falsas (optimizando directamente los parámetros $\vec{\theta}$ del PQC cuántico a través de PyTorch y PennyLane).

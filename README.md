@@ -29,13 +29,13 @@ Este repositorio contiene implementaciones optimizadas de modelos de **Aprendiza
 
 ```mermaid
 graph LR
-    A[Datos Clásicos x ∈ ℝ¹³] --> B[Normalización Min-Max a [0, π]]
-    B --> C[Angle Embedding Rx en 13 Qubits]
-    C --> D[Entrelazador CNOT Lineal]
-    D --> E[Capa Parametrizada Rot(α,β,γ)]
-    E --> F[Entrelazamiento CNOT Circular]
-    F --> G[Medición del Valor Esperado ⟨Z₀⟩]
-    G --> H[Predicción de Clase [-1, 1]]
+    A["Características del Vino x ∈ ℝ¹³"] --> B["Normalización Min-Max a [0, π]"]
+    B --> C["Angle Embedding Rx en 13 Qubits"]
+    C --> D["Entrelazador CNOT Lineal"]
+    D --> E["Capa Parametrizada Rot(α,β,γ)"]
+    E --> F["Entrelazamiento CNOT Circular"]
+    F --> G["Medición del Valor Esperado ⟨Z₀⟩"]
+    G --> H["Predicción de Clase [-1, 1]"]
 ```
 
 #### Código Núcleo:
@@ -70,7 +70,7 @@ def classifier(param, x=None):
 ```mermaid
 graph TD
     subgraph Generator [Generador Cuántico por Parches]
-        Latent[Vector Latente z ∈ [0, π]⁵] --> B1[Sub-PQC 1]
+        Latent["Vector Latente z ∈ [0, π]⁵"] --> B1[Sub-PQC 1]
         Latent --> B2[Sub-PQC 2]
         Latent --> B3[Sub-PQC 3]
         Latent --> B4[Sub-PQC 4]
@@ -78,15 +78,15 @@ graph TD
         B2 --> C2[Medición Parcial de Ancila]
         B3 --> C3[Medición Parcial de Ancila]
         B4 --> C4[Medición Parcial de Ancila]
-        C1 --> D1[Parche 1: 4x4 px]
-        C2 --> D2[Parche 2: 4x4 px]
-        C3 --> D3[Parche 3: 4x4 px]
-        C4 --> D4[Parche 4: 4x4 px]
-        D1 & D2 & D3 & D4 --> FakeImg[Imagen Generada 8x8 px]
+        C1 --> D1["Parche 1: 4x4 px"]
+        C2 --> D2["Parche 2: 4x4 px"]
+        C3 --> D3["Parche 3: 4x4 px"]
+        C4 --> D4["Parche 4: 4x4 px"]
+        D1 & D2 & D3 & D4 --> FakeImg["Imagen Generada 8x8 px"]
     end
     FakeImg --> Disc[Discriminador Clásico MLP PyTorch]
-    RealImg[Imagen Real 8x8 optdigits] --> Disc
-    Disc --> Output[Clasificación Real/Sintética]
+    RealImg["Imagen Real 8x8 optdigits"] --> Disc
+    Disc --> Output["Clasificación Real/Sintética"]
 ```
 
 #### Código Núcleo:

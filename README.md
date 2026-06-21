@@ -69,11 +69,11 @@ def classifier(param, x=None):
 
 ```mermaid
 graph TD
-    subgraph Generador Cuántico por Parches (G)
-        A[Vector Latente z ∈ [0, π]⁵] --> B1[Sub-PQC 1]
-        A --> B2[Sub-PQC 2]
-        A --> B3[Sub-PQC 3]
-        A --> B4[Sub-PQC 4]
+    subgraph Generator [Generador Cuántico por Parches]
+        Latent[Vector Latente z ∈ [0, π]⁵] --> B1[Sub-PQC 1]
+        Latent --> B2[Sub-PQC 2]
+        Latent --> B3[Sub-PQC 3]
+        Latent --> B4[Sub-PQC 4]
         B1 --> C1[Medición Parcial de Ancila]
         B2 --> C2[Medición Parcial de Ancila]
         B3 --> C3[Medición Parcial de Ancila]
@@ -82,11 +82,11 @@ graph TD
         C2 --> D2[Parche 2: 4x4 px]
         C3 --> D3[Parche 3: 4x4 px]
         C4 --> D4[Parche 4: 4x4 px]
-        D1 & D2 & D3 & D4 --> E[Imagen Generada 8x8 px]
+        D1 & D2 & D3 & D4 --> FakeImg[Imagen Generada 8x8 px]
     end
-    E --> F[Discriminador Clásico MLP PyTorch]
-    G[Imagen Real 8x8 optdigits] --> F
-    F --> H[Clasificación Real/Sintética]
+    FakeImg --> Disc[Discriminador Clásico MLP PyTorch]
+    RealImg[Imagen Real 8x8 optdigits] --> Disc
+    Disc --> Output[Clasificación Real/Sintética]
 ```
 
 #### Código Núcleo:
